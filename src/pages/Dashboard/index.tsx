@@ -35,23 +35,30 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadTransactions(): Promise<void> {
-      const response = await api.get('transactions');
+      const {
+        data: { transactions: rawTransactions, balance: rawBalance },
+      } = await api.get('transactions');
 
-      const transactionsFormatted = response.data.transactions.map(
+      const formattedTransactions = rawTransactions.map(
         (transaction: Transaction) => ({
           ...transaction,
-          formattedValue: formatValue(transaction.value),
+          formattedValue:
+            (transaction.type === 'outcome' ? ' - ' : '') +
+            formatValue(transaction.value),
+          formattedDate: new Date(transaction.created_at).toLocaleDateString(
+            'pt-br',
+          ),
         }),
       );
 
-      const balanceFormatted = {
-        income: formatValue(response.data.balance.income),
-        outcome: formatValue(response.data.balance.outcome),
-        total: formatValue(response.data.balance.total),
+      const formattedBalance = {
+        income: formatValue(rawBalance.income),
+        outcome: formatValue(rawBalance.outcome),
+        total: formatValue(rawBalance.total),
       };
 
-      setTransactions(transactionsFormatted);
-      setBalance(balanceFormatted);
+      setTransactions(formattedTransactions);
+      setBalance(formattedBalance);
     }
 
     loadTransactions();
@@ -97,17 +104,16 @@ const Dashboard: React.FC = () => {
             </thead>
 
             <tbody>
-              {transactions &&
-                transactions.map(transaction => (
-                  <tr key={transaction.id}>
-                    <td className="title">{transaction.title}</td>
-                    <td className={transaction.type}>
-                      {transaction.formattedValue}
-                    </td>
-                    <td>{transaction.category.title}</td>
-                    <td>{transaction.formattedDate}</td>
-                  </tr>
-                ))}
+              {transactions.map(transaction => (
+                <tr key={transaction.id}>
+                  <td className="title">{transaction.title}</td>
+                  <td className={transaction.type}>
+                    {transaction.formattedValue}
+                  </td>
+                  <td>{transaction.category.title}</td>
+                  <td>{transaction.formattedDate}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </TableContainer>
